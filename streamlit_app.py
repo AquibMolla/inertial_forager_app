@@ -3,6 +3,11 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+import streamlit.components.v1 as components
+import matplotlib
+matplotlib.use("Agg")
+
 from simulate import simulate_forager
 
 # Streamlit page settings
@@ -35,44 +40,64 @@ st.markdown("""
     </p>
 """, unsafe_allow_html=True)
 
-# Display image
-st.image("rabbit.jpg", caption="Illustration of the Forager Model", use_container_width=True)
+# Optional image
+try:
+    st.image("app.jpeg", caption="Illustration of the Forager Model", use_container_width=True)
+except:
+    pass  # Optional
 
-# Sidebar inputs
+# Sidebar controls
 with st.sidebar:
     st.header("Simulation Parameters")
-    max_energy = st.slider("Full energy (1-20):", 1, 20, 10)
+    max_energy = st.slider("Full energy (1–20):", 1, 20, 10)
     laziness = st.slider("Laziness (0–1):", 0.0, 1.0, 0.5)
 
-# Run simulation
+# Simulation + Animation
 if st.button("Run Simulation"):
     width = height = 4 * max_energy
-    with st.spinner("Simulating..."):
-
+    with st.spinner("Running simulation..."):
         path, energy_history, space = simulate_forager(width, height, max_energy, laziness)
         lifetime = len(path)
         eaten = ((width + 1) * (height + 1)) - np.sum(space)
 
-        # Plot results
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
-        ax1.plot(path[:, 1], path[:, 0], "b-", alpha=0.5, label="Path")
-        ax1.plot(path[-1, 1], path[-1, 0], "ro", label="End")
-        ax1.set_title("Forager Path")
-        ax1.set_xlim(0, width)
-        ax1.set_ylim(0, height)
-        ax1.set_aspect('equal')
-        ax1.grid(True, linestyle='--', alpha=0.3)
-        ax1.legend()
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 4))
+        frames = len(path)
 
-        ax2.plot(energy_history, "r-")
-        ax2.set_title("Energy Over Time")
-        ax2.set_xlabel("Steps")
-        ax2.set_ylabel("Energy")
-        ax2.grid(True, linestyle='--', alpha=0.3)
+        def init():
+            ax1.clear()
+            ax2.clear()
+            ax1.set_xlim(0, width)
+            ax1.set_ylim(0, height)
+            ax2.set_xlim(0, frames)
+            ax2.set_ylim(0, max_energy + 2)
+            ax1.set_title("Forager Path")
+            ax2.set_title("Energy Level")
+            ax1.grid(True, linestyle="--", alpha=0.3)
+            ax2.grid(True, linestyle="--", alpha=0.3)
 
-        st.pyplot(fig)
+        def update(frame):
+            ax1.clear()
+            ax2.clear()
+            ax1.set_xlim(0, width)
+            ax1.set_ylim(0, height)
+            ax2.set_xlim(0, frames)
+            ax2.set_ylim(0, max_energy + 2)
+            ax1.set_title("Forager Path")
+            ax2.set_title("Energy Level")
+            ax1.grid(True, linestyle="--", alpha=0.3)
+            ax2.grid(True, linestyle="--", alpha=0.3)
 
-        # Show results in cards
+            ax1.plot(path[:frame, 1], path[:frame, 0], "b-", alpha=0.6)
+            ax1.plot(path[frame, 1], path[frame, 0], "ro", markersize=8)
+            ax2.plot(energy_history[:frame], "r-")
+
+        anim = FuncAnimation(fig, update, frames=frames, init_func=init, interval=60, blit=False)
+        html = anim.to_jshtml()
+        plt.close(fig)
+
+        components.html(html, height=520)
+
+        # Summary
         col1, col2 = st.columns(2)
         with col1:
             st.markdown(f"""
