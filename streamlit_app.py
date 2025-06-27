@@ -36,7 +36,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Display image
-st.image("app.jpeg", caption="Illustration of the Forager Model", use_container_width=True)
+st.image("rabbit.jpeg", caption="Illustration of the Forager Model", use_container_width=True)
 
 # Sidebar inputs
 with st.sidebar:
